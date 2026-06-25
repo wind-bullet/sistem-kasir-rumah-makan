@@ -1,0 +1,310 @@
+/* Custom styles for Sistem Kasir Rumah Makan */
+:root {
+    --primary-color: #ff5e36;
+    --primary-gradient: linear-gradient(135deg, #ff5e36 0%, #ff7e5f 100%);
+    --secondary-color: #feb47b;
+    --dark-bg: #11101d;
+    --sidebar-bg: #1e1e2f;
+    --sidebar-hover: #2b2b40;
+    --light-bg: #f8f9fa;
+    --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    --border-radius: 15px;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--light-bg);
+    overflow-x: hidden;
+}
+
+/* Layout Wrapper */
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    min-width: 260px;
+    max-width: 260px;
+    background: var(--sidebar-bg);
+    color: #fff;
+    transition: all 0.3s;
+    min-height: 100vh;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    z-index: 999;
+}
+
+#sidebar.active {
+    margin-left: -260px;
+}
+
+#sidebar .sidebar-header {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    text-align: center;
+}
+
+#sidebar .sidebar-header h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+#sidebar ul.components {
+    padding: 20px 0;
+}
+
+#sidebar ul li {
+    padding: 3px 15px;
+}
+
+#sidebar ul li a {
+    padding: 12px 15px;
+    font-size: 0.95rem;
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+#sidebar ul li a i {
+    margin-right: 10px;
+    font-size: 1.1rem;
+    vertical-align: middle;
+}
+
+#sidebar ul li a:hover {
+    color: #fff;
+    background: var(--sidebar-hover);
+}
+
+#sidebar ul li.active > a {
+    color: #fff;
+    background: var(--primary-gradient);
+    box-shadow: 0 4px 15px rgba(255, 94, 54, 0.3);
+}
+
+/* Content Area */
+#content {
+    width: 100%;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+/* Navbar */
+.navbar-custom {
+    background-color: #fff;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    padding: 15px 30px;
+}
+
+.navbar-btn {
+    box-shadow: none;
+    outline: none !important;
+    border: none;
+}
+
+/* Cards & Components */
+.card-custom {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    background-color: #fff;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.card-header-custom {
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 20px 25px;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.card-body-custom {
+    padding: 25px;
+}
+
+/* Buttons */
+.btn-primary-custom {
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary-custom:hover {
+    box-shadow: 0 5px 15px rgba(255, 94, 54, 0.4);
+    opacity: 0.95;
+    color: white;
+}
+
+.btn-secondary-custom {
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #555;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-secondary-custom:hover {
+    background: #f1f1f1;
+    color: #333;
+}
+
+/* Badge colors */
+.bg-badge-kosong {
+    background-color: #28a745 !important;
+}
+
+.bg-badge-terisi {
+    background-color: #dc3545 !important;
+}
+
+/* Table styling */
+.table-custom {
+    vertical-align: middle;
+}
+
+.table-custom thead th {
+    background-color: #f8f9fa;
+    color: #555;
+    font-weight: 600;
+    border-bottom-width: 1px;
+    padding: 15px;
+}
+
+.table-custom tbody td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+/* Dashboard Statistics Cards */
+.stat-card {
+    border-radius: var(--border-radius);
+    padding: 25px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 20px;
+    height: 100%;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    top: -30px;
+    right: -30px;
+}
+
+.stat-card-1 {
+    background: linear-gradient(135deg, #ff5e36 0%, #ff7e5f 100%);
+}
+
+.stat-card-2 {
+    background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+}
+
+.stat-card-3 {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.stat-card-4 {
+    background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+}
+
+.stat-card-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    position: absolute;
+    bottom: 15px;
+    right: 20px;
+}
+
+.stat-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-card-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* POS Screen Styles */
+.pos-menu-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+    cursor: pointer;
+    background: #fff;
+    height: 100%;
+}
+
+.pos-menu-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.pos-menu-img {
+    height: 130px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.pos-menu-placeholder {
+    height: 130px;
+    background: linear-gradient(135deg, #ffe3dd 0%, #fff0eb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ff5e36;
+    font-size: 2.5rem;
+}
+
+.pos-cart-panel {
+    position: sticky;
+    top: 20px;
+}
+
+.cart-items-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+/* Mobile responsive sidebar rules */
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -260px;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+    #sidebarCollapse span {
+        display: none;
+    }
+    .navbar-custom {
+        padding: 15px 15px;
+    }
+}

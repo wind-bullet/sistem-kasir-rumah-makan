@@ -1,0 +1,728 @@
+================================================================================
+              IMPLEMENTATION PLAN - SISTEM KASIR RUMAH MAKAN
+                         Framework: CodeIgniter 4
+================================================================================
+
+GAMBARAN UMUM:
+Aplikasi website responsive untuk manajemen kasir rumah makan. Fitur utama
+meliputi login/logout, CRUD menu makanan/minuman, transaksi penjualan,
+cetak struk, dashboard, laporan, dan manajemen meja. Ada 2 role: Admin dan Kasir.
+
+================================================================================
+FASE 0: SETUP PROJECT
+================================================================================
+
+1. Install CodeIgniter 4 via Composer:
+   composer create-project codeigniter4/appstarter .
+
+2. Konfigurasi file .env:
+   - Set CI_ENVIRONMENT = development
+   - Set database.default.hostname, database, username, password
+   - Database name: db_kasir_rm
+
+3. Buat database MySQL: db_kasir_rm
+
+4. Install library tambahan:
+   - dompdf/dompdf (untuk export PDF laporan): composer require dompdf/dompdf
+
+5. Download dan masukkan ke folder public/assets/:
+   - Bootstrap 5 (CSS dan JS) - untuk UI responsive
+   - Bootstrap Icons atau Font Awesome - untuk ikon
+   - SweetAlert2 - untuk alert/konfirmasi yang menarik
+   - jQuery (opsional, jika diperlukan)
+
+   Struktur folder assets:
+   public/
+   ├── assets/
+   │   ├── css/
+   │   │   ├── bootstrap.min.css
+   │   │   └── custom.css        (style kustom)
+   │   ├── js/
+   │   │   ├── bootstrap.bundle.min.js
+   │   │   └── sweetalert2.all.min.js
+   │   └── uploads/
+   │       └── menu/             (untuk gambar menu)
+
+================================================================================
+FASE 1: DATABASE - MIGRASI & SEEDER
+================================================================================
+
+Buat migration untuk semua tabel berikut. Jalankan dengan: php spark migrate
+
+--- Tabel: kategori ---
+- id_kategori      INT AUTO_INCREMENT PRIMARY KEY
+- nama_kategori    VARCHAR(50) NOT NULL (contoh: Makanan, Minuman, Dessert)
+- created_at       DATETIME
+- updated_at       DATETIME
+
+--- Tabel: menu ---
+- id_menu          INT AUTO_INCREMENT PRIMARY KEY
+- id_kategori      INT NOT NULL (FK ke kategori.id_kategori)
+- nama_menu        VARCHAR(100) NOT NULL
+- harga            INT NOT NULL
+- stok             INT NOT NULL DEFAULT 0
+- gambar           VARCHAR(255) DEFAULT NULL (nama file gambar)
+- created_at       DATETIME
+- updated_at       DATETIME
+
+--- Tabel: users ---
+- id_user          INT AUTO_INCREMENT PRIMARY KEY
+- nama             VARCHAR(100) NOT NULL
+- username         VARCHAR(50) NOT NULL UNIQUE
+- password         VARCHAR(255) NOT NULL (hash bcrypt)
+- role             ENUM('admin', 'kasir') NOT NULL DEFAULT 'kasir'
+- created_at       DATETIME
+- updated_at       DATETIME
+
+--- Tabel: meja ---
+- id_meja          INT AUTO_INCREMENT PRIMARY KEY
+- nomor_meja       INT NOT NULL UNIQUE
+- status           ENUM('kosong', 'terisi') NOT NULL DEFAULT 'kosong'
+- created_at       DATETIME
+- updated_at       DATETIME
+
+--- Tabel: transaksi ---
+- id_transaksi     INT AUTO_INCREMENT PRIMARY KEY
+- id_user          INT NOT NULL (FK ke users.id_user, kasir yang melayani)
+- id_meja          INT DEFAULT NULL (FK ke meja.id_meja, nullable)
+- total_harga      INT NOT NULL
+- uang_bayar       INT NOT NULL
+- kembalian        INT NOT NULL
+- tanggal          DATETIME NOT NULL
+- created_at       DATETIME
+- updated_at       DATETIME
+
+--- Tabel: detail_transaksi ---
+- id_detail        INT AUTO_INCREMENT PRIMARY KEY
+- id_transaksi     INT NOT NULL (FK ke transaksi.id_transaksi)
+- id_menu          INT NOT NULL (FK ke menu.id_menu)
+- nama_menu        VARCHAR(100) NOT NULL (simpan snapshot nama saat transaksi)
+- harga            INT NOT NULL (simpan snapshot harga saat transaksi)
+- jumlah           INT NOT NULL
+- subtotal         INT NOT NULL
+- created_at       DATETIME
+
+Buat Seeder untuk data awal:
+- 3 kategori default: Makanan, Minuman, Dessert
+- 1 user admin default: username=admin, password=admin123 (hashed), role=admin
+- 5-10 meja default: nomor 1-10, status=kosong
+- Beberapa menu contoh untuk testing
+
+Jalankan seeder: php spark db:seed NamaSeeder
+
+================================================================================
+FASE 2: MODEL
+================================================================================
+
+Buat Model CI4 (extends CodeIgniter\Model) untuk setiap tabel.
+Letakkan di app/Models/
+
+1. KategoriModel.php
+   - table: kategori
+   - primaryKey: id_kategori
+   - allowedFields: [nama_kategori]
+
+2. MenuModel.php
+   - table: menu
+   - primaryKey: id_menu
+   - allowedFields: [id_kategori, nama_menu, harga, stok, gambar]
+   - Tambahkan method:
+     * getMenuWithKategori() - join dengan tabel kategori
+     * kurangiStok($id_menu, $jumlah) - kurangi stok setelah transaksi
+     * cariMenu($keyword) - pencarian berdasarkan nama
+     * getByKategori($id_kategori) - filter berdasarkan kategori
+
+3. UserModel.php
+   - table: users
+   - primaryKey: id_user
+   - allowedFields: [nama, username, password, role]
+   - Password harus di-hash sebelum disimpan (gunakan password_hash)
+
+4. MejaModel.php
+   - table: meja
+   - primaryKey: id_meja
+   - allowedFields: [nomor_meja, status]
+
+5. TransaksiModel.php
+   - table: transaksi
+   - primaryKey: id_transaksi
+   - allowedFields: [id_user, id_meja, total_harga, uang_bayar, kembalian, tanggal]
+   - Tambahkan method:
+     * getTransaksiHariIni() - filter berdasarkan tanggal hari ini
+     * getTotalPendapatanHariIni() - SUM total_harga hari ini
+     * getTransaksiByPeriode($dari, $sampai) - untuk laporan
+     * getTransaksiWithDetail($id) - join dengan detail dan user
+
+6. DetailTransaksiModel.php
+   - table: detail_transaksi
+   - primaryKey: id_detail
+   - allowedFields: [id_transaksi, id_menu, nama_menu, harga, jumlah, subtotal]
+
+================================================================================
+FASE 3: AUTH SYSTEM (LOGIN, LOGOUT, SESSION, FILTER)
+================================================================================
+
+1. Buat Controller: app/Controllers/Auth.php
+   - index()        -> tampilkan halaman login
+   - login()        -> proses login (POST)
+                      Validasi username & password
+                      Gunakan password_verify() untuk cek password
+                      Set session: id_user, nama, username, role, logged_in=true
+                      Redirect ke dashboard
+   - logout()       -> hapus session, redirect ke login
+
+2. Buat View: app/Views/auth/login.php
+   - Form login sederhana responsive (Bootstrap)
+   - Input: username, password, tombol Login
+   - Tampilkan flash message jika login gagal
+
+3. Buat Filter: app/Filters/AuthFilter.php
+   - Cek apakah session 'logged_in' ada
+   - Jika belum login, redirect ke halaman login
+   - Daftarkan filter di app/Config/Filters.php
+
+4. Buat Filter: app/Filters/RoleFilter.php
+   - Cek session 'role'
+   - Jika role tidak sesuai, redirect ke dashboard dengan pesan error
+   - Digunakan untuk membatasi akses admin-only routes
+
+5. Daftarkan filter di app/Config/Filters.php dan terapkan di Routes.php:
+   - Semua route kecuali /auth/* harus melewati AuthFilter
+   - Route admin-only (kelola menu, user, kategori, meja, laporan) pakai RoleFilter
+
+================================================================================
+FASE 4: LAYOUT & TEMPLATE
+================================================================================
+
+1. Buat layout utama: app/Views/layout/template.php
+   Struktur:
+   - <!DOCTYPE html> dengan meta viewport untuk responsive
+   - Load Bootstrap CSS di <head>
+   - Sidebar navigasi (responsive, bisa collapse di mobile)
+   - Navbar atas dengan nama user dan tombol logout
+   - Area konten utama (renderSection atau echo $content)
+   - Load Bootstrap JS dan SweetAlert2 di bawah
+   - Load custom.css dan custom.js
+
+2. Sidebar menu berdasarkan role:
+   ADMIN melihat:
+   - Dashboard
+   - Menu (CRUD)
+   - Kategori (CRUD)
+   - Transaksi Baru
+   - Riwayat Transaksi
+   - Manajemen Meja
+   - Laporan Penjualan
+   - Manajemen User
+   - Logout
+
+   KASIR melihat:
+   - Dashboard
+   - Transaksi Baru
+   - Riwayat Transaksi
+   - Logout
+
+3. Buat file: public/assets/css/custom.css
+   - Styling sidebar, warna tema, dan penyesuaian tampilan
+   - Pilih warna tema yang cocok untuk rumah makan (contoh: merah-oranye-kuning)
+
+================================================================================
+FASE 5: DASHBOARD
+================================================================================
+
+Controller: app/Controllers/Dashboard.php
+- index() -> tampilkan dashboard
+
+Data yang ditampilkan (dalam card Bootstrap):
+- Jumlah total menu (COUNT dari tabel menu)
+- Jumlah transaksi hari ini (COUNT dari transaksi WHERE tanggal = hari ini)
+- Total pendapatan hari ini (SUM total_harga WHERE tanggal = hari ini)
+- Jumlah meja kosong / total meja
+
+View: app/Views/dashboard/index.php
+- 4 card info di atas (responsive grid)
+- Opsional: tabel 5 transaksi terakhir di bawah card
+
+Route: GET /dashboard -> Dashboard::index (filter: auth)
+
+================================================================================
+FASE 6: CRUD KATEGORI
+================================================================================
+
+Controller: app/Controllers/Kategori.php (filter: auth + role:admin)
+
+Methods:
+- index()    -> tampilkan daftar kategori dalam tabel
+- create()   -> tampilkan form tambah
+- store()    -> simpan kategori baru (POST), validasi: nama_kategori required
+- edit($id)  -> tampilkan form edit dengan data existing
+- update($id)-> update kategori (POST), validasi: nama_kategori required
+- delete($id)-> hapus kategori, cek dulu apakah ada menu yang pakai kategori ini
+
+Views di app/Views/kategori/:
+- index.php   (tabel dengan kolom: No, Nama Kategori, Aksi [Edit|Hapus])
+- create.php  (form input nama kategori)
+- edit.php    (form edit nama kategori)
+
+Gunakan SweetAlert untuk konfirmasi hapus.
+
+Routes:
+- GET  /kategori          -> Kategori::index
+- GET  /kategori/create   -> Kategori::create
+- POST /kategori/store    -> Kategori::store
+- GET  /kategori/edit/$id -> Kategori::edit
+- POST /kategori/update/$id -> Kategori::update
+- GET  /kategori/delete/$id -> Kategori::delete
+
+================================================================================
+FASE 7: CRUD MENU MAKANAN & MINUMAN
+================================================================================
+
+Controller: app/Controllers/Menu.php (filter: auth + role:admin)
+
+Methods:
+- index()     -> tampilkan daftar menu dengan join kategori
+                Support pencarian (GET parameter ?keyword=)
+                Support filter kategori (GET parameter ?kategori=)
+- create()    -> form tambah menu
+- store()     -> simpan menu baru (POST)
+                Validasi: nama_menu, harga, stok required, gambar optional
+                Upload gambar ke public/assets/uploads/menu/
+                Rename file gambar dengan uniqid/timestamp agar unik
+- edit($id)   -> form edit menu
+- update($id) -> update menu (POST)
+                Jika ada gambar baru, hapus gambar lama, upload yang baru
+- delete($id) -> hapus menu dan file gambarnya
+                Cek apakah menu pernah dipakai di transaksi (jika ya, beri peringatan)
+
+Validasi upload gambar:
+- Tipe: jpg, jpeg, png
+- Ukuran max: 2MB
+
+Views di app/Views/menu/:
+- index.php   (tabel/card: gambar, nama, kategori, harga, stok, aksi)
+              (tambahkan form pencarian dan dropdown filter kategori di atas)
+              (tampilkan badge peringatan jika stok <= 5)
+- create.php  (form: nama_menu, id_kategori (dropdown), harga, stok, gambar (file))
+- edit.php    (form edit, tampilkan gambar saat ini)
+
+Routes:
+- GET  /menu              -> Menu::index
+- GET  /menu/create       -> Menu::create
+- POST /menu/store        -> Menu::store
+- GET  /menu/edit/$id     -> Menu::edit
+- POST /menu/update/$id   -> Menu::update
+- GET  /menu/delete/$id   -> Menu::delete
+
+================================================================================
+FASE 8: MANAJEMEN MEJA
+================================================================================
+
+Controller: app/Controllers/Meja.php (filter: auth + role:admin)
+
+Methods:
+- index()     -> tampilkan daftar meja dengan status (warna badge: hijau=kosong, merah=terisi)
+- create()    -> form tambah meja
+- store()     -> simpan meja baru, validasi: nomor_meja required & unique
+- edit($id)   -> form edit meja
+- update($id) -> update meja
+- delete($id) -> hapus meja (cek apakah meja sedang terisi)
+- toggleStatus($id) -> ubah status kosong <-> terisi (untuk kemudahan)
+
+Views di app/Views/meja/:
+- index.php   (tabel: nomor meja, status dengan badge warna, aksi)
+- create.php  (form: nomor_meja)
+- edit.php    (form: nomor_meja, status dropdown)
+
+Routes:
+- GET  /meja                    -> Meja::index
+- GET  /meja/create             -> Meja::create
+- POST /meja/store              -> Meja::store
+- GET  /meja/edit/$id           -> Meja::edit
+- POST /meja/update/$id        -> Meja::update
+- GET  /meja/delete/$id        -> Meja::delete
+- GET  /meja/toggle-status/$id -> Meja::toggleStatus
+
+================================================================================
+FASE 9: MANAJEMEN USER
+================================================================================
+
+Controller: app/Controllers/User.php (filter: auth + role:admin)
+
+Methods:
+- index()     -> tampilkan daftar user
+- create()    -> form tambah user
+- store()     -> simpan user baru
+                Validasi: nama, username (unique), password, role required
+                Hash password dengan password_hash() sebelum simpan
+- edit($id)   -> form edit user
+- update($id) -> update user
+                Jika password diisi, hash dan update. Jika kosong, jangan update password.
+- delete($id) -> hapus user (tidak boleh hapus diri sendiri)
+
+Views di app/Views/user/:
+- index.php   (tabel: nama, username, role, aksi)
+- create.php  (form: nama, username, password, role dropdown [admin|kasir])
+- edit.php    (form: nama, username, password (opsional), role)
+
+Routes:
+- GET  /user              -> User::index
+- GET  /user/create       -> User::create
+- POST /user/store        -> User::store
+- GET  /user/edit/$id     -> User::edit
+- POST /user/update/$id   -> User::update
+- GET  /user/delete/$id   -> User::delete
+
+================================================================================
+FASE 10: TRANSAKSI PENJUALAN (FITUR INTI)
+================================================================================
+
+Controller: app/Controllers/Transaksi.php (filter: auth, akses: admin & kasir)
+
+Methods:
+- index()     -> halaman transaksi baru (POS-like interface)
+- getMenu()   -> return JSON daftar menu (untuk AJAX pencarian)
+- store()     -> simpan transaksi (POST, menerima JSON/form data)
+
+Alur Transaksi:
+1. Kasir membuka halaman Transaksi Baru
+2. Pilih meja (dropdown, opsional)
+3. Cari menu (input pencarian real-time) atau pilih dari daftar
+4. Klik menu untuk menambahkan ke keranjang
+5. Di keranjang: bisa ubah jumlah (+/-) dan hapus item
+6. Total harga dihitung otomatis (JavaScript di client-side)
+7. Input uang bayar, kembalian dihitung otomatis
+8. Klik tombol "Bayar" -> SweetAlert konfirmasi
+9. Submit ke server (AJAX POST)
+
+Proses di server saat store():
+- Validasi: pastikan ada minimal 1 item, uang_bayar >= total_harga
+- Simpan ke tabel transaksi (total_harga, uang_bayar, kembalian, id_user, id_meja, tanggal)
+- Simpan setiap item ke tabel detail_transaksi (snapshot nama_menu & harga)
+- Kurangi stok menu untuk setiap item yang terjual
+- Jika ada meja dipilih, set status meja jadi 'terisi'
+- Return response sukses dengan id_transaksi
+
+10. Setelah sukses, tampilkan opsi "Cetak Struk" -> redirect ke halaman struk
+
+View: app/Views/transaksi/index.php
+- Layout 2 kolom (responsive, stack di mobile):
+  * Kiri: daftar menu (searchable, filterable by kategori, tampilkan stok)
+  * Kanan: keranjang pesanan, total, input bayar, kembalian, tombol Bayar
+- Gunakan JavaScript untuk logika client-side (tambah item, hitung total, dll)
+- Menu dengan stok 0 tampilkan sebagai disabled/grayed out
+
+Routes:
+- GET  /transaksi         -> Transaksi::index
+- GET  /transaksi/get-menu -> Transaksi::getMenu (JSON response)
+- POST /transaksi/store   -> Transaksi::store
+
+================================================================================
+FASE 11: CETAK STRUK
+================================================================================
+
+Controller: app/Controllers/Struk.php (filter: auth)
+
+Methods:
+- index($id_transaksi) -> tampilkan halaman struk siap cetak
+
+View: app/Views/struk/index.php
+- Layout khusus cetak (BUKAN pakai template sidebar)
+- Lebar disesuaikan untuk struk (width: 80mm atau 300px)
+- Isi struk:
+  * Nama Rumah Makan (judul besar): "RM LEZAT JAYA" (atau nama lain)
+  * Alamat rumah makan
+  * Garis pemisah (---------)
+  * No. Transaksi
+  * Tanggal & Waktu
+  * Kasir: nama kasir
+  * No. Meja (jika ada)
+  * Garis pemisah
+  * Daftar pesanan: nama_menu x jumlah = subtotal
+  * Garis pemisah
+  * Total Harga
+  * Uang Bayar
+  * Kembalian
+  * Garis pemisah
+  * Pesan: "Terima Kasih!"
+
+- Tombol "Cetak" -> window.print()
+- Tombol "Kembali" -> redirect ke halaman transaksi
+- Gunakan CSS @media print untuk menyembunyikan tombol saat cetak
+
+Route:
+- GET /struk/$id -> Struk::index
+
+================================================================================
+FASE 12: RIWAYAT TRANSAKSI
+================================================================================
+
+Controller: app/Controllers/Riwayat.php (filter: auth)
+
+Methods:
+- index()      -> tampilkan daftar semua transaksi (tabel, terbaru di atas)
+                 Support filter tanggal (dari - sampai)
+                 Pagination
+- detail($id)  -> tampilkan detail 1 transaksi (item-item yang dibeli)
+
+View: app/Views/riwayat/:
+- index.php    (form filter tanggal di atas, tabel: no, tanggal, kasir, meja,
+                total, aksi [Detail|Cetak Struk])
+- detail.php   (info transaksi + tabel detail item, tombol cetak struk)
+
+Routes:
+- GET /riwayat            -> Riwayat::index
+- GET /riwayat/detail/$id -> Riwayat::detail
+
+================================================================================
+FASE 13: LAPORAN PENJUALAN
+================================================================================
+
+Controller: app/Controllers/Laporan.php (filter: auth + role:admin)
+
+Methods:
+- index()       -> halaman laporan dengan filter periode
+- generate()    -> tampilkan laporan berdasarkan filter (POST/GET)
+                  Parameter: tipe (harian/mingguan/bulanan), tanggal
+                  Harian: filter 1 hari
+                  Mingguan: filter 7 hari terakhir dari tanggal dipilih
+                  Bulanan: filter berdasarkan bulan & tahun dipilih
+- exportPdf()   -> generate PDF dari laporan menggunakan Dompdf
+
+Data laporan:
+- Daftar transaksi sesuai periode
+- Total jumlah transaksi
+- Total pendapatan
+- Menu paling laris (opsional, dari SUM jumlah di detail_transaksi)
+
+View: app/Views/laporan/:
+- index.php    (form filter: dropdown tipe periode, date picker,
+                tombol "Tampilkan" dan "Export PDF")
+- hasil.php    (tabel hasil laporan + ringkasan total)
+- pdf.php      (template HTML khusus untuk di-render Dompdf, tanpa sidebar)
+
+Cara pakai Dompdf di controller:
+  use Dompdf\Dompdf;
+  $dompdf = new Dompdf();
+  $html = view('laporan/pdf', $data);
+  $dompdf->loadHtml($html);
+  $dompdf->setPaper('A4', 'portrait');
+  $dompdf->render();
+  $dompdf->stream('laporan.pdf', ['Attachment' => true]);
+
+Routes:
+- GET  /laporan           -> Laporan::index
+- POST /laporan/generate  -> Laporan::generate
+- POST /laporan/export-pdf -> Laporan::exportPdf
+
+================================================================================
+FASE 14: ROUTES LENGKAP (app/Config/Routes.php)
+================================================================================
+
+$routes->get('/', 'Auth::index');
+
+// Auth
+$routes->get('/auth', 'Auth::index');
+$routes->post('/auth/login', 'Auth::login');
+$routes->get('/auth/logout', 'Auth::logout');
+
+// Dashboard (auth)
+$routes->get('/dashboard', 'Dashboard::index', ['filter' => 'auth']);
+
+// Kategori (auth + admin)
+$routes->group('kategori', ['filter' => 'auth:admin'], function($routes) {
+    $routes->get('/', 'Kategori::index');
+    $routes->get('create', 'Kategori::create');
+    $routes->post('store', 'Kategori::store');
+    $routes->get('edit/(:num)', 'Kategori::edit/$1');
+    $routes->post('update/(:num)', 'Kategori::update/$1');
+    $routes->get('delete/(:num)', 'Kategori::delete/$1');
+});
+
+// Menu (auth + admin)
+$routes->group('menu', ['filter' => 'auth:admin'], function($routes) {
+    $routes->get('/', 'Menu::index');
+    $routes->get('create', 'Menu::create');
+    $routes->post('store', 'Menu::store');
+    $routes->get('edit/(:num)', 'Menu::edit/$1');
+    $routes->post('update/(:num)', 'Menu::update/$1');
+    $routes->get('delete/(:num)', 'Menu::delete/$1');
+});
+
+// Meja (auth + admin)
+$routes->group('meja', ['filter' => 'auth:admin'], function($routes) {
+    $routes->get('/', 'Meja::index');
+    $routes->get('create', 'Meja::create');
+    $routes->post('store', 'Meja::store');
+    $routes->get('edit/(:num)', 'Meja::edit/$1');
+    $routes->post('update/(:num)', 'Meja::update/$1');
+    $routes->get('delete/(:num)', 'Meja::delete/$1');
+    $routes->get('toggle-status/(:num)', 'Meja::toggleStatus/$1');
+});
+
+// User (auth + admin)
+$routes->group('user', ['filter' => 'auth:admin'], function($routes) {
+    $routes->get('/', 'User::index');
+    $routes->get('create', 'User::create');
+    $routes->post('store', 'User::store');
+    $routes->get('edit/(:num)', 'User::edit/$1');
+    $routes->post('update/(:num)', 'User::update/$1');
+    $routes->get('delete/(:num)', 'User::delete/$1');
+});
+
+// Transaksi (auth, admin & kasir)
+$routes->group('transaksi', ['filter' => 'auth'], function($routes) {
+    $routes->get('/', 'Transaksi::index');
+    $routes->get('get-menu', 'Transaksi::getMenu');
+    $routes->post('store', 'Transaksi::store');
+});
+
+// Struk (auth)
+$routes->get('/struk/(:num)', 'Struk::index/$1', ['filter' => 'auth']);
+
+// Riwayat (auth)
+$routes->group('riwayat', ['filter' => 'auth'], function($routes) {
+    $routes->get('/', 'Riwayat::index');
+    $routes->get('detail/(:num)', 'Riwayat::detail/$1');
+});
+
+// Laporan (auth + admin)
+$routes->group('laporan', ['filter' => 'auth:admin'], function($routes) {
+    $routes->get('/', 'Laporan::index');
+    $routes->post('generate', 'Laporan::generate');
+    $routes->post('export-pdf', 'Laporan::exportPdf');
+});
+
+================================================================================
+FASE 15: FINISHING & POLISH
+================================================================================
+
+1. Responsive Design:
+   - Pastikan semua halaman tampil baik di desktop dan mobile
+   - Sidebar collapse di mobile (Bootstrap offcanvas atau sidebar toggle)
+   - Tabel responsive (class table-responsive dari Bootstrap)
+   - Halaman transaksi: kolom stack vertikal di mobile
+
+2. Validasi Form:
+   - Server-side validation di semua controller (CI4 validation)
+   - Tampilkan pesan error di view
+
+3. Flash Messages:
+   - Gunakan session flash untuk pesan sukses/error setelah operasi CRUD
+   - Tampilkan menggunakan SweetAlert atau alert Bootstrap
+
+4. Peringatan Stok:
+   - Di halaman daftar menu, beri badge merah jika stok <= 5
+   - Di halaman transaksi, disable menu jika stok = 0
+   - Setelah transaksi, cek stok dan beri peringatan jika ada yang habis
+
+5. Keamanan:
+   - Semua password di-hash dengan password_hash()
+   - Gunakan CSRF protection bawaan CI4 (aktifkan di Config/Filters.php)
+   - Escape output di view untuk mencegah XSS
+
+6. Pagination:
+   - Gunakan pagination bawaan CI4 untuk daftar menu, riwayat transaksi, user
+   - Tampilkan 10-20 data per halaman
+
+================================================================================
+CATATAN PENTING UNTUK DEVELOPER
+================================================================================
+
+- Kerjakan secara berurutan dari Fase 0 sampai Fase 15
+- Test setiap fase sebelum lanjut ke fase berikutnya
+- Gunakan php spark serve untuk menjalankan server development
+- Gunakan session library bawaan CI4, jangan buat session manual
+- Untuk upload gambar, gunakan library upload bawaan CI4
+- Nama rumah makan bisa dikonfigurasi di .env atau hardcode: "RM LEZAT JAYA"
+- Semua harga dalam Rupiah (format: Rp xxx.xxx) gunakan number_format()
+- Timezone set ke Asia/Jakarta di app/Config/App.php
+
+================================================================================
+STRUKTUR FOLDER UTAMA YANG AKAN DIBUAT
+================================================================================
+
+app/
+├── Config/
+│   ├── Routes.php        (routing)
+│   └── Filters.php       (registrasi filter)
+├── Controllers/
+│   ├── Auth.php
+│   ├── Dashboard.php
+│   ├── Kategori.php
+│   ├── Menu.php
+│   ├── Meja.php
+│   ├── User.php
+│   ├── Transaksi.php
+│   ├── Struk.php
+│   ├── Riwayat.php
+│   └── Laporan.php
+├── Database/
+│   ├── Migrations/
+│   │   ├── xxxx_CreateKategoriTable.php
+│   │   ├── xxxx_CreateMenuTable.php
+│   │   ├── xxxx_CreateUsersTable.php
+│   │   ├── xxxx_CreateMejaTable.php
+│   │   ├── xxxx_CreateTransaksiTable.php
+│   │   └── xxxx_CreateDetailTransaksiTable.php
+│   └── Seeds/
+│       └── InitSeeder.php
+├── Filters/
+│   ├── AuthFilter.php
+│   └── RoleFilter.php
+├── Models/
+│   ├── KategoriModel.php
+│   ├── MenuModel.php
+│   ├── UserModel.php
+│   ├── MejaModel.php
+│   ├── TransaksiModel.php
+│   └── DetailTransaksiModel.php
+└── Views/
+    ├── layout/
+    │   └── template.php
+    ├── auth/
+    │   └── login.php
+    ├── dashboard/
+    │   └── index.php
+    ├── kategori/
+    │   ├── index.php
+    │   ├── create.php
+    │   └── edit.php
+    ├── menu/
+    │   ├── index.php
+    │   ├── create.php
+    │   └── edit.php
+    ├── meja/
+    │   ├── index.php
+    │   ├── create.php
+    │   └── edit.php
+    ├── user/
+    │   ├── index.php
+    │   ├── create.php
+    │   └── edit.php
+    ├── transaksi/
+    │   └── index.php
+    ├── struk/
+    │   └── index.php
+    ├── riwayat/
+    │   ├── index.php
+    │   └── detail.php
+    └── laporan/
+        ├── index.php
+        ├── hasil.php
+        └── pdf.php
+
+public/
+└── assets/
+    ├── css/
+    │   ├── bootstrap.min.css
+    │   └── custom.css
+    ├── js/
+    │   ├── bootstrap.bundle.min.js
+    │   └── sweetalert2.all.min.js
+    └── uploads/
+        └── menu/
+
+================================================================================
+                              SELESAI
+================================================================================
