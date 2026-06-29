@@ -59,6 +59,10 @@
                     <a href="<?= base_url('meja') ?>"><i class="bi bi-table"></i> Manajemen Meja</a>
                 </li>
                 
+                <li class="<?= ($current_uri == 'qrcode') ? 'active' : '' ?>">
+                    <a href="<?= base_url('qrcode') ?>"><i class="bi bi-qr-code"></i> QR Code Meja</a>
+                </li>
+                
                 <li class="<?= ($current_uri == 'laporan') ? 'active' : '' ?>">
                     <a href="<?= base_url('laporan') ?>"><i class="bi bi-graph-up-arrow"></i> Laporan Penjualan</a>
                 </li>

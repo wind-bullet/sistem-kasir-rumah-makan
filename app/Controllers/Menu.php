@@ -62,7 +62,7 @@ class Menu extends BaseController
             'id_kategori' => 'required|is_not_unique[kategori.id_kategori]',
             'harga'       => 'required|numeric|greater_than_equal_to[0]',
             'stok'        => 'required|numeric|greater_than_equal_to[0]',
-            'gambar'      => 'max_size[gambar,2048]|is_image[gambar]|mime_in[gambar,image/jpg,image/jpeg,image/png]'
+            'gambar'      => 'permit_empty|max_size[gambar,2048]|is_image[gambar]|mime_in[gambar,image/jpg,image/jpeg,image/png]'
         ];
 
         if (!$this->validate($rules)) {
@@ -118,7 +118,7 @@ class Menu extends BaseController
             'id_kategori' => 'required|is_not_unique[kategori.id_kategori]',
             'harga'       => 'required|numeric|greater_than_equal_to[0]',
             'stok'        => 'required|numeric|greater_than_equal_to[0]',
-            'gambar'      => 'max_size[gambar,2048]|is_image[gambar]|mime_in[gambar,image/jpg,image/jpeg,image/png]'
+            'gambar'      => 'permit_empty|max_size[gambar,2048]|is_image[gambar]|mime_in[gambar,image/jpg,image/jpeg,image/png]'
         ];
 
         if (!$this->validate($rules)) {

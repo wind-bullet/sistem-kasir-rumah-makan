@@ -76,3 +76,15 @@ $routes->group('laporan', ['filter' => 'auth:admin'], function($routes) {
     $routes->post('generate', 'Laporan::generate');
     $routes->post('export-pdf', 'Laporan::exportPdf');
 });
+
+// Pemesanan via QR (publik, tanpa login)
+$routes->get('/pesan/sukses', 'Pesan::sukses');
+$routes->get('/pesan/(:num)', 'Pesan::index/$1');
+$routes->post('/pesan/submit', 'Pesan::submit');
+
+// QR Code Management (auth + admin)
+$routes->group('qrcode', ['filter' => 'auth:admin'], function($routes) {
+    $routes->get('/', 'QRCode::index');
+    $routes->get('generate', 'QRCode::generate');
+});
+
