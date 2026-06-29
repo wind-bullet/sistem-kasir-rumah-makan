@@ -94,13 +94,6 @@ class Transaksi extends BaseController
                 ]);
             }
 
-            if ($menu['stok'] < $qty) {
-                return $this->response->setJSON([
-                    'status'  => 'error',
-                    'message' => "Stok untuk menu '{$menu['nama_menu']}' tidak mencukupi (Tersedia: {$menu['stok']})."
-                ]);
-            }
-
             $subtotal = $menu['harga'] * $qty;
             $totalHarga += $subtotal;
 
@@ -144,9 +137,6 @@ class Transaksi extends BaseController
             $item['id_transaksi'] = $idTransaksi;
             $item['created_at'] = date('Y-m-d H:i:s');
             $this->detailTransaksiModel->insert($item);
-
-            // Reduce stock
-            $this->menuModel->kurangiStok($item['id_menu'], $item['jumlah']);
         }
 
         // 3. Update table status if selected

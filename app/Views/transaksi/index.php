@@ -210,29 +210,19 @@
         }
 
         filtered.forEach(item => {
-            const isOutOfStock = item.stok == 0;
-            const isCriticalStock = item.stok <= 5 && item.stok > 0;
             const formattedPrice = new Intl.NumberFormat('id-ID').format(item.harga);
-
-            let badgeHtml = '';
-            if (isOutOfStock) {
-                badgeHtml = `<span class="pos-menu-badge-out">Habis</span>`;
-            } else if (isCriticalStock) {
-                badgeHtml = `<span class="pos-menu-badge-crit">Sisa ${item.stok}</span>`;
-            }
 
             const imgHtml = item.gambar 
                 ? `<img src="<?= base_url('assets/uploads/menu/') ?>/${item.gambar}" class="pos-menu-img" alt="${item.nama_menu}">`
                 : `<div class="pos-menu-placeholder"><i class="bi bi-egg-fried"></i></div>`;
 
-            const cardStyle = isOutOfStock ? 'opacity: 0.6; pointer-events: none;' : '';
+            const cardStyle = '';
 
             const col = document.createElement('div');
             col.className = 'col';
             col.innerHTML = `
-                <div class="pos-menu-card shadow-sm h-100" style="${cardStyle}" onclick="addToCart(${item.id_menu}, '${item.nama_menu.replace(/'/g, "\\'")}', ${item.harga}, ${item.stok})">
+                <div class="pos-menu-card shadow-sm h-100" style="${cardStyle}" onclick="addToCart(${item.id_menu}, '${item.nama_menu.replace(/'/g, "\\'")}', ${item.harga})">
                     <div class="pos-menu-img-container">
-                        ${badgeHtml}
                         ${imgHtml}
                     </div>
                     <div class="p-3">
@@ -240,7 +230,6 @@
                         <small class="text-secondary d-block mb-2" style="font-size: 0.8rem;">${item.nama_kategori}</small>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="fw-bold text-success" style="font-size: 0.95rem;">Rp ${formattedPrice}</span>
-                            <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.75rem;">Stok: ${item.stok}</span>
                         </div>
                     </div>
                 </div>`;
@@ -249,28 +238,16 @@
     }
 
     // Add Item to Cart
-    function addToCart(id, nama, harga, maxStok) {
-        if (maxStok <= 0) return;
-
+    function addToCart(id, nama, harga) {
         const existing = cart.find(item => item.id_menu === id);
         if (existing) {
-            if (existing.qty < maxStok) {
-                existing.qty++;
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Stok Terbatas',
-                    text: `Maaf, stok maksimal menu ini adalah ${maxStok} porsi.`,
-                    confirmButtonColor: '#ff5e36'
-                });
-            }
+            existing.qty++;
         } else {
             cart.push({
                 id_menu: id,
                 nama_menu: nama,
                 harga: harga,
-                qty: 1,
-                max_stok: maxStok
+                qty: 1
             });
         }
 
@@ -284,16 +261,9 @@
             const newQty = item.qty + delta;
             if (newQty <= 0) {
                 removeFromCart(id);
-            } else if (newQty <= item.max_stok) {
+            } else {
                 item.qty = newQty;
                 renderCart();
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Stok Terbatas',
-                    text: `Mencapai batas stok yang tersedia (${item.max_stok} porsi).`,
-                    confirmButtonColor: '#ff5e36'
-                });
             }
         }
     }

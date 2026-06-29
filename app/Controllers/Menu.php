@@ -61,7 +61,6 @@ class Menu extends BaseController
             'nama_menu'   => 'required',
             'id_kategori' => 'required|is_not_unique[kategori.id_kategori]',
             'harga'       => 'required|numeric|greater_than_equal_to[0]',
-            'stok'        => 'required|numeric|greater_than_equal_to[0]',
             'gambar'      => 'permit_empty|max_size[gambar,2048]|is_image[gambar]|mime_in[gambar,image/jpg,image/jpeg,image/png]'
         ];
 
@@ -81,7 +80,7 @@ class Menu extends BaseController
             'nama_menu'   => $this->request->getPost('nama_menu'),
             'id_kategori' => $this->request->getPost('id_kategori'),
             'harga'       => $this->request->getPost('harga'),
-            'stok'        => $this->request->getPost('stok'),
+            'stok'        => 9999, // default stock as menu is cooked immediately
             'gambar'      => $namaGambar
         ]);
 
@@ -117,7 +116,6 @@ class Menu extends BaseController
             'nama_menu'   => 'required',
             'id_kategori' => 'required|is_not_unique[kategori.id_kategori]',
             'harga'       => 'required|numeric|greater_than_equal_to[0]',
-            'stok'        => 'required|numeric|greater_than_equal_to[0]',
             'gambar'      => 'permit_empty|max_size[gambar,2048]|is_image[gambar]|mime_in[gambar,image/jpg,image/jpeg,image/png]'
         ];
 
@@ -142,7 +140,7 @@ class Menu extends BaseController
             'nama_menu'   => $this->request->getPost('nama_menu'),
             'id_kategori' => $this->request->getPost('id_kategori'),
             'harga'       => $this->request->getPost('harga'),
-            'stok'        => $this->request->getPost('stok'),
+            'stok'        => 9999, // default stock as menu is cooked immediately
             'gambar'      => $namaGambar
         ]);
 

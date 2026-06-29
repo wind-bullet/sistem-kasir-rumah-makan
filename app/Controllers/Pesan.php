@@ -36,10 +36,9 @@ class Pesan extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Meja tidak ditemukan.");
         }
 
-        // Get all menu items with category details where stok > 0
+        // Get all menu items with category details
         $menu = $this->menuModel->select('menu.*, kategori.nama_kategori')
                                 ->join('kategori', 'kategori.id_kategori = menu.id_kategori')
-                                ->where('menu.stok >', 0)
                                 ->orderBy('menu.nama_menu', 'ASC')
                                 ->findAll();
 
@@ -89,11 +88,6 @@ class Pesan extends BaseController
                 return redirect()->to('/pesan/' . $nomorMeja);
             }
 
-            if ($menu['stok'] < $qty) {
-                session()->setFlashdata('error', 'Stok untuk menu "' . $menu['nama_menu'] . '" tidak mencukupi (Tersisa: ' . $menu['stok'] . ').');
-                return redirect()->to('/pesan/' . $nomorMeja);
-            }
-
             $subtotal = $menu['harga'] * $qty;
             $totalHarga += $subtotal;
 
@@ -132,9 +126,6 @@ class Pesan extends BaseController
             $item['id_transaksi'] = $idTransaksi;
             $item['created_at'] = date('Y-m-d H:i:s');
             $this->detailTransaksiModel->insert($item);
-
-            // Reduce stock
-            $this->menuModel->kurangiStok($item['id_menu'], $item['jumlah']);
         }
 
         // 3. Update table status to 'terisi'

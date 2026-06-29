@@ -36,12 +36,8 @@ class MenuModel extends Model
 
     public function kurangiStok($id_menu, $jumlah)
     {
-        $menu = $this->find($id_menu);
-        if ($menu) {
-            $stokBaru = max(0, $menu['stok'] - $jumlah);
-            return $this->update($id_menu, ['stok' => $stokBaru]);
-        }
-        return false;
+        // Don't reduce stock because there's no stock management (cooked immediately)
+        return true;
     }
 
     public function cariMenu($keyword)

@@ -191,13 +191,12 @@
                             </div>
                             <div class="card-body d-flex flex-column p-3">
                                 <h5 class="fw-bold text-dark mb-1" style="font-size: 1.05rem;"><?= esc($m['nama_menu']) ?></h5>
-                                <div class="text-muted mb-2" style="font-size: 0.8rem;">Stok: <?= $m['stok'] ?> pcs</div>
                                 <div class="d-flex justify-content-between align-items-center mt-auto">
                                     <span class="fw-bold text-success" style="font-size: 1.1rem;">Rp <?= number_format($m['harga'], 0, ',', '.') ?></span>
                                     
                                     <!-- Add button / Quantity Control -->
                                     <div class="menu-actions" id="actions-<?= $m['id_menu'] ?>">
-                                        <button class="btn btn-primary-custom btn-sm px-3" onclick="addToCart(<?= $m['id_menu'] ?>, '<?= esc($m['nama_menu']) ?>', <?= $m['harga'] ?>, <?= $m['stok'] ?>)">
+                                        <button class="btn btn-primary-custom btn-sm px-3" onclick="addToCart(<?= $m['id_menu'] ?>, '<?= esc($m['nama_menu']) ?>', <?= $m['harga'] ?>)">
                                             <i class="bi bi-plus-lg me-1"></i> Tambah
                                         </button>
                                     </div>
@@ -299,16 +298,12 @@
         });
 
         // Add Item to Cart
-        function addToCart(id, name, price, maxStock) {
+        function addToCart(id, name, price) {
             const existing = cart.find(i => i.id_menu === id);
             if (existing) {
-                if (existing.qty < maxStock) {
-                    existing.qty++;
-                } else {
-                    alert('Maaf, jumlah pesanan melebihi stok yang tersedia.');
-                }
+                existing.qty++;
             } else {
-                cart.push({ id_menu: id, nama_menu: name, harga: price, qty: 1, maxStock: maxStock });
+                cart.push({ id_menu: id, nama_menu: name, harga: price, qty: 1 });
             }
             updateUI();
         }
@@ -320,9 +315,6 @@
                 item.qty += delta;
                 if (item.qty <= 0) {
                     cart = cart.filter(i => i.id_menu !== id);
-                } else if (item.qty > item.maxStock) {
-                    item.qty = item.maxStock;
-                    alert('Maaf, jumlah pesanan melebihi stok yang tersedia.');
                 }
             }
             updateUI();
@@ -432,16 +424,14 @@
                     `;
                 } else {
                     // Revert to original Add button
-                    // We can extract name, price, stock from card
+                    // We can extract name, price from card
                     const card = div.closest('.menu-card');
                     const name = card.querySelector('h5').innerText;
                     const priceText = card.querySelector('.text-success').innerText;
                     const price = parseInt(priceText.replace(/[^0-9]/g, ''));
-                    const stockText = card.querySelector('.text-muted').innerText;
-                    const stock = parseInt(stockText.match(/\d+/)[0]);
 
                     div.innerHTML = `
-                        <button class="btn btn-primary-custom btn-sm px-3" onclick="addToCart(${id}, '${escapeQuote(name)}', ${price}, ${stock})">
+                        <button class="btn btn-primary-custom btn-sm px-3" onclick="addToCart(${id}, '${escapeQuote(name)}', ${price})">
                             <i class="bi bi-plus-lg me-1"></i> Tambah
                         </button>
                     `;

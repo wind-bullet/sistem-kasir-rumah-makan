@@ -48,14 +48,13 @@
                                 <th>Nama Menu</th>
                                 <th>Kategori</th>
                                 <th>Harga</th>
-                                <th style="width: 120px;">Stok</th>
                                 <th style="width: 150px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($menu)): ?>
                                 <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">Tidak ada menu yang cocok dengan pencarian.</td>
+                                    <td colspan="5" class="text-center py-4 text-muted">Tidak ada menu yang cocok dengan pencarian.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($menu as $m): ?>
@@ -77,15 +76,6 @@
                                             <span class="badge bg-light text-dark border px-3 py-2 rounded-pill"><?= esc($m['nama_kategori']) ?></span>
                                         </td>
                                         <td class="fw-bold text-success">Rp <?= number_format($m['harga'], 0, ',', '.') ?></td>
-                                        <td>
-                                            <?php if ($m['stok'] == 0): ?>
-                                                <span class="badge bg-danger px-3 py-2 rounded-pill">Habis</span>
-                                            <?php elseif ($m['stok'] <= 5): ?>
-                                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Kritis: <?= $m['stok'] ?></span>
-                                            <?php else: ?>
-                                                <span class="badge bg-success px-3 py-2 rounded-pill"><?= $m['stok'] ?> pcs</span>
-                                            <?php endif; ?>
-                                        </td>
                                         <td>
                                             <a href="<?= base_url('menu/edit/' . $m['id_menu']) ?>" class="btn btn-sm btn-light border text-warning" title="Edit"><i class="bi bi-pencil-square"></i></a>
                                             <a href="#" class="btn btn-sm btn-light border text-danger btn-delete" data-url="<?= base_url('menu/delete/' . $m['id_menu']) ?>" title="Hapus"><i class="bi bi-trash"></i></a>

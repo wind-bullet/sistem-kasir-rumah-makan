@@ -39,7 +39,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 mb-3">
                             <label for="harga" class="form-label text-secondary fw-semibold">Harga (Rupiah)</label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
@@ -48,14 +48,6 @@
                                     <div class="invalid-feedback"><?= validation_errors()['harga'] ?></div>
                                 <?php endif; ?>
                             </div>
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="stok" class="form-label text-secondary fw-semibold">Stok Awal</label>
-                            <input type="number" class="form-control <?= (validation_errors() && isset(validation_errors()['stok'])) ? 'is-invalid' : '' ?>" id="stok" name="stok" min="0" placeholder="Contoh: 50" value="<?= old('stok', 0) ?>" required>
-                            <?php if (validation_errors() && isset(validation_errors()['stok'])): ?>
-                                <div class="invalid-feedback"><?= validation_errors()['stok'] ?></div>
-                            <?php endif; ?>
                         </div>
                     </div>
 
