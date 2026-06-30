@@ -95,6 +95,15 @@
                     </select>
                 </div>
 
+                <!-- Payment Method / Metode Pembayaran -->
+                <div class="mb-3">
+                    <label for="metode_pembayaran" class="form-label text-secondary fw-semibold">Metode Pembayaran</label>
+                    <select class="form-select" id="metode_pembayaran" onchange="toggleCashierPaymentMethod()">
+                        <option value="cash">Cash / Tunai</option>
+                        <option value="qris">QRIS / Digital</option>
+                    </select>
+                </div>
+
                 <!-- Table Cart Items -->
                 <div class="table-responsive cart-items-list border rounded p-2 mb-3" style="min-height: 180px;">
                     <table class="table table-sm table-borderless align-middle mb-0" id="cart-table">
@@ -348,6 +357,12 @@
         document.getElementById('total-qty').innerText = totalQty;
         document.getElementById('total-price').innerText = `Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`;
         
+        // Update read-only QRIS field value dynamically
+        const method = document.getElementById('metode_pembayaran').value;
+        if (method === 'qris') {
+            document.getElementById('uang_bayar').value = totalPrice;
+        }
+
         calculateChange();
     }
 
@@ -388,8 +403,9 @@
         const totalPrice = cart.reduce((sum, item) => sum + (item.harga * item.qty), 0);
         const uangBayar = parseInt(document.getElementById('uang_bayar').value) || 0;
         const idMeja = document.getElementById('id_meja').value;
+        const metodePembayaran = document.getElementById('metode_pembayaran').value;
 
-        if (uangBayar < totalPrice) {
+        if (metodePembayaran === 'cash' && uangBayar < totalPrice) {
             Swal.fire({
                 icon: 'error',
                 title: 'Pembayaran Kurang',
@@ -401,7 +417,7 @@
 
         Swal.fire({
             title: 'Konfirmasi Pembayaran?',
-            text: `Proses transaksi dengan total: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`,
+            text: `Proses transaksi dengan total: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)} (${metodePembayaran.toUpperCase()})`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#28a745',
@@ -414,7 +430,8 @@
                 const formData = new FormData();
                 formData.append(csrfName, csrfToken);
                 formData.append('id_meja', idMeja);
-                formData.append('uang_bayar', uangBayar);
+                formData.append('uang_bayar', metodePembayaran === 'qris' ? totalPrice : uangBayar);
+                formData.append('metode_pembayaran', metodePembayaran);
 
                 cart.forEach((item, index) => {
                     formData.append(`cart[${index}][id_menu]`, item.id_menu);
@@ -464,6 +481,20 @@
                 });
             }
         });
+    }
+    function toggleCashierPaymentMethod() {
+        const method = document.getElementById('metode_pembayaran').value;
+        const uangBayarInput = document.getElementById('uang_bayar');
+        const totalPrice = cart.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+
+        if (method === 'qris') {
+            uangBayarInput.value = totalPrice;
+            uangBayarInput.setAttribute('readonly', true);
+        } else {
+            uangBayarInput.removeAttribute('readonly');
+            uangBayarInput.value = '';
+        }
+        calculateChange();
     }
 </script>
 <?= $this->endSection() ?>

@@ -106,14 +106,20 @@ class Transaksi extends BaseController
             ];
         }
 
-        if ($uangBayar < $totalHarga) {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Uang bayar tidak mencukupi total transaksi.'
-            ]);
+        $metodePembayaran = $this->request->getPost('metode_pembayaran') ?? 'cash';
+
+        if ($metodePembayaran === 'qris') {
+            $uangBayar = $totalHarga;
+        } else {
+            if ($uangBayar < $totalHarga) {
+                return $this->response->setJSON([
+                    'status'  => 'error',
+                    'message' => 'Uang bayar tidak mencukupi total transaksi.'
+                ]);
+            }
         }
 
-        $kembalian = $uangBayar - $totalHarga;
+        $kembalian = ($metodePembayaran === 'qris') ? 0 : ($uangBayar - $totalHarga);
         $idUser = session()->get('id_user');
 
         // Database transaction block
@@ -122,12 +128,13 @@ class Transaksi extends BaseController
 
         // 1. Insert into transaksi
         $this->transaksiModel->insert([
-            'id_user'     => $idUser,
-            'id_meja'     => !empty($idMeja) ? $idMeja : null,
-            'total_harga' => $totalHarga,
-            'uang_bayar'  => $uangBayar,
-            'kembalian'   => $kembalian,
-            'tanggal'     => date('Y-m-d H:i:s')
+            'id_user'           => $idUser,
+            'id_meja'           => !empty($idMeja) ? $idMeja : null,
+            'total_harga'       => $totalHarga,
+            'uang_bayar'        => $uangBayar,
+            'kembalian'         => $kembalian,
+            'metode_pembayaran' => $metodePembayaran,
+            'tanggal'           => date('Y-m-d H:i:s')
         ]);
 
         $idTransaksi = $this->transaksiModel->getInsertID();

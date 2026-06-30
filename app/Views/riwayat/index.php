@@ -41,6 +41,7 @@
                                 <th>Tanggal & Waktu</th>
                                 <th>Kasir</th>
                                 <th>Meja</th>
+                                <th>Metode</th>
                                 <th>Total Harga</th>
                                 <th>Uang Bayar</th>
                                 <th>Kembalian</th>
@@ -64,6 +65,9 @@
                                             <?php else: ?>
                                                 <span class="badge bg-light text-dark border">Take Away</span>
                                             <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="badge <?= (isset($tx['metode_pembayaran']) && $tx['metode_pembayaran'] === 'qris') ? 'bg-primary' : 'bg-secondary' ?> text-uppercase" style="font-size: 0.75rem;"><?= esc($tx['metode_pembayaran'] ?? 'cash') ?></span>
                                         </td>
                                         <td class="fw-bold text-success">Rp <?= number_format($tx['total_harga'], 0, ',', '.') ?></td>
                                         <td>Rp <?= number_format($tx['uang_bayar'], 0, ',', '.') ?></td>

@@ -30,6 +30,10 @@
                         <td class="text-secondary">Meja</td>
                         <td>: <?= $transaksi['id_meja'] ? 'Meja Nomor ' . $transaksi['nomor_meja'] : 'Take Away (Bawa Pulang)' ?></td>
                     </tr>
+                    <tr>
+                        <td class="text-secondary">Metode Pembayaran</td>
+                        <td>: <span class="badge <?= (isset($transaksi['metode_pembayaran']) && $transaksi['metode_pembayaran'] === 'qris') ? 'bg-primary' : 'bg-secondary' ?> fw-bold text-uppercase"><?= esc($transaksi['metode_pembayaran'] ?? 'cash') ?></span></td>
+                    </tr>
                     <tr class="border-top">
                         <td class="text-secondary pt-3">Total Belanja</td>
                         <td class="fw-bold text-success fs-5 pt-3">: Rp <?= number_format($transaksi['total_harga'], 0, ',', '.') ?></td>

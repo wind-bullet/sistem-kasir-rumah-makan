@@ -12,7 +12,7 @@ class TransaksiModel extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['id_user', 'id_meja', 'total_harga', 'uang_bayar', 'kembalian', 'tanggal'];
+    protected $allowedFields    = ['id_user', 'id_meja', 'total_harga', 'uang_bayar', 'kembalian', 'metode_pembayaran', 'tanggal'];
 
     // Dates
     protected $useTimestamps = true;

@@ -14,7 +14,7 @@ $routes->get('/auth/logout', 'Auth::logout');
 $routes->get('/dashboard', 'Dashboard::index', ['filter' => 'auth']);
 
 // Kategori (auth + admin)
-$routes->group('kategori', ['filter' => 'auth:admin'], function($routes) {
+$routes->group('kategori', ['filter' => ['auth', 'role:admin']], function($routes) {
     $routes->get('/', 'Kategori::index');
     $routes->get('create', 'Kategori::create');
     $routes->post('store', 'Kategori::store');
@@ -24,7 +24,7 @@ $routes->group('kategori', ['filter' => 'auth:admin'], function($routes) {
 });
 
 // Menu (auth + admin)
-$routes->group('menu', ['filter' => 'auth:admin'], function($routes) {
+$routes->group('menu', ['filter' => ['auth', 'role:admin']], function($routes) {
     $routes->get('/', 'Menu::index');
     $routes->get('create', 'Menu::create');
     $routes->post('store', 'Menu::store');
@@ -34,7 +34,7 @@ $routes->group('menu', ['filter' => 'auth:admin'], function($routes) {
 });
 
 // Meja (auth + admin)
-$routes->group('meja', ['filter' => 'auth:admin'], function($routes) {
+$routes->group('meja', ['filter' => ['auth', 'role:admin']], function($routes) {
     $routes->get('/', 'Meja::index');
     $routes->get('create', 'Meja::create');
     $routes->post('store', 'Meja::store');
@@ -45,7 +45,7 @@ $routes->group('meja', ['filter' => 'auth:admin'], function($routes) {
 });
 
 // User (auth + admin)
-$routes->group('user', ['filter' => 'auth:admin'], function($routes) {
+$routes->group('user', ['filter' => ['auth', 'role:admin']], function($routes) {
     $routes->get('/', 'User::index');
     $routes->get('create', 'User::create');
     $routes->post('store', 'User::store');
@@ -71,7 +71,7 @@ $routes->group('riwayat', ['filter' => 'auth'], function($routes) {
 });
 
 // Laporan (auth + admin)
-$routes->group('laporan', ['filter' => 'auth:admin'], function($routes) {
+$routes->group('laporan', ['filter' => ['auth', 'role:admin']], function($routes) {
     $routes->get('/', 'Laporan::index');
     $routes->post('generate', 'Laporan::generate');
     $routes->post('export-pdf', 'Laporan::exportPdf');
@@ -79,12 +79,17 @@ $routes->group('laporan', ['filter' => 'auth:admin'], function($routes) {
 
 // Pemesanan via QR (publik, tanpa login)
 $routes->get('/pesan/sukses', 'Pesan::sukses');
+$routes->get('/pesan/takeaway', 'Pesan::takeaway');
+$routes->post('/pesan/submit-takeaway', 'Pesan::submitTakeaway');
 $routes->get('/pesan/(:num)', 'Pesan::index/$1');
 $routes->post('/pesan/submit', 'Pesan::submit');
 
 // QR Code Management (auth + admin)
-$routes->group('qrcode', ['filter' => 'auth:admin'], function($routes) {
+$routes->group('qrcode', ['filter' => ['auth', 'role:admin']], function($routes) {
     $routes->get('/', 'QRCode::index');
     $routes->get('generate', 'QRCode::generate');
+    $routes->get('generate/(:num)', 'QRCode::generateSingle/$1');
+    $routes->get('generate-takeaway', 'QRCode::generateTakeaway');
 });
+
 

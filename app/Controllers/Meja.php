@@ -47,10 +47,15 @@ class Meja extends BaseController
             return redirect()->back()->withInput();
         }
 
+        $nomorMeja = $this->request->getPost('nomor_meja');
         $this->mejaModel->save([
-            'nomor_meja' => $this->request->getPost('nomor_meja'),
+            'nomor_meja' => $nomorMeja,
             'status'     => 'kosong'
         ]);
+
+        // Auto-generate QR code for the new table
+        helper('qr');
+        generate_qr_meja($nomorMeja);
 
         session()->setFlashdata('success', 'Meja baru berhasil ditambahkan.');
         return redirect()->to('/meja');
@@ -95,10 +100,20 @@ class Meja extends BaseController
             return redirect()->back()->withInput();
         }
 
+        $oldNomorMeja = $meja['nomor_meja'];
+        $newNomorMeja = $this->request->getPost('nomor_meja');
+
         $this->mejaModel->update($id, [
-            'nomor_meja' => $this->request->getPost('nomor_meja'),
+            'nomor_meja' => $newNomorMeja,
             'status'     => $this->request->getPost('status')
         ]);
+
+        // If table number changed, cleanup old QR and generate new one
+        if ($oldNomorMeja != $newNomorMeja) {
+            helper('qr');
+            delete_qr_meja($oldNomorMeja);
+            generate_qr_meja($newNomorMeja);
+        }
 
         session()->setFlashdata('success', 'Meja berhasil diperbarui.');
         return redirect()->to('/meja');
@@ -117,7 +132,13 @@ class Meja extends BaseController
             return redirect()->to('/meja');
         }
 
+        $nomorMeja = $meja['nomor_meja'];
         $this->mejaModel->delete($id);
+
+        // Delete the QR code image file
+        helper('qr');
+        delete_qr_meja($nomorMeja);
+
         session()->setFlashdata('success', 'Meja berhasil dihapus.');
         return redirect()->to('/meja');
     }

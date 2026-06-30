@@ -125,3 +125,4 @@ _modules/*
 /results/
 /phpunit.xml
 /implementation_plan.txt
+error_message/

@@ -134,9 +134,15 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm py-3">
         <div class="container">
             <span class="navbar-brand navbar-brand-custom fs-4"><i class="bi bi-shop me-2"></i>RM LEZAT JAYA</span>
-            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-6 fw-semibold">
-                <i class="bi bi-table me-2 text-primary"></i>Meja <?= esc($meja['nomor_meja']) ?>
-            </span>
+            <?php if (isset($is_takeaway) && $is_takeaway): ?>
+                <span class="badge bg-light text-danger border px-3 py-2 rounded-pill fs-6 fw-semibold">
+                    <i class="bi bi-bag-check-fill me-2 text-danger"></i>Take Away (Bawa Pulang)
+                </span>
+            <?php else: ?>
+                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-6 fw-semibold">
+                    <i class="bi bi-table me-2 text-primary"></i>Meja <?= esc($meja['nomor_meja']) ?>
+                </span>
+            <?php endif; ?>
         </div>
     </nav>
 
@@ -157,7 +163,11 @@
         <!-- Welcome Banner -->
         <div class="bg-white p-4 rounded-4 shadow-sm border mb-4">
             <h4 class="fw-bold mb-1">Selamat Datang di RM Lezat Jaya!</h4>
-            <p class="text-secondary mb-0">Silakan pilih makanan & minuman langsung dari layar ponsel Anda.</p>
+            <?php if (isset($is_takeaway) && $is_takeaway): ?>
+                <p class="text-secondary mb-0">Silakan pilih makanan & minuman untuk dibawa pulang (Take Away).</p>
+            <?php else: ?>
+                <p class="text-secondary mb-0">Silakan pilih makanan & minuman langsung dari layar ponsel Anda.</p>
+            <?php endif; ?>
         </div>
 
         <!-- Categories Slider -->
@@ -253,11 +263,58 @@
                     </div>
 
                     <!-- Submission Form -->
-                    <form action="<?= base_url('pesan/submit') ?>" method="POST" onsubmit="return submitOrder()">
+                    <form action="<?= (isset($is_takeaway) && $is_takeaway) ? base_url('pesan/submit-takeaway') : base_url('pesan/submit') ?>" method="POST" onsubmit="return submitOrder()">
                         <?= csrf_field() ?>
-                        <input type="hidden" name="id_meja" value="<?= $meja['id_meja'] ?>">
-                        <input type="hidden" name="nomor_meja" value="<?= $meja['nomor_meja'] ?>">
+                        <?php if (isset($is_takeaway) && $is_takeaway): ?>
+                            <!-- Takeaway Mode -->
+                        <?php else: ?>
+                            <input type="hidden" name="id_meja" value="<?= $meja['id_meja'] ?>">
+                            <input type="hidden" name="nomor_meja" value="<?= $meja['nomor_meja'] ?>">
+                        <?php endif; ?>
                         <input type="hidden" id="cart-input" name="cart">
+
+                        <!-- Payment Method Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark d-block"><i class="bi bi-credit-card me-2"></i>Metode Pembayaran</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="metode_pembayaran" id="pay-cash" value="cash" checked onchange="togglePaymentInstructions()">
+                                    <label class="btn btn-outline-secondary w-100 py-3 rounded-3 fw-semibold d-flex flex-column align-items-center" for="pay-cash">
+                                        <i class="bi bi-cash-coin fs-3 mb-1"></i>
+                                        Cash / Tunai
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="metode_pembayaran" id="pay-qris" value="qris" onchange="togglePaymentInstructions()">
+                                    <label class="btn btn-outline-primary w-100 py-3 rounded-3 fw-semibold d-flex flex-column align-items-center" for="pay-qris">
+                                        <i class="bi bi-qr-code fs-3 mb-1"></i>
+                                        QRIS / Digital
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Instructions / QRIS Image -->
+                        <div id="payment-instructions" class="alert alert-info border-0 rounded-3 mb-4 py-3 shadow-sm text-center">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <span id="instruction-text">Silakan lakukan pembayaran langsung di meja kasir setelah Anda selesai makan.</span>
+                        </div>
+
+                        <div id="qris-payment-container" class="d-none text-center border p-3 rounded-3 bg-white mb-4 shadow-sm">
+                            <span class="fw-bold text-dark d-block mb-2">Scan QRIS RM LEZAT JAYA</span>
+                            <?php if (file_exists(ROOTPATH . 'public/assets/images/qris_payment.png')): ?>
+                                <img src="<?= base_url('assets/images/qris_payment.png') ?>" alt="QRIS Payment" class="img-fluid rounded mb-2" style="max-width: 220px;">
+                            <?php else: ?>
+                                <div class="bg-light p-4 rounded d-flex flex-column align-items-center justify-content-center text-muted" style="height: 180px;">
+                                    <i class="bi bi-qr-code-scan fs-1 mb-2"></i>
+                                    <span class="fw-semibold">QRIS Aktif Belum Diupload</span>
+                                    <small class="text-secondary mt-1">Gunakan cash atau hubungi kasir</small>
+                                </div>
+                            <?php endif; ?>
+                            <div class="small text-muted mt-2">
+                                Harap simpan screenshot bukti transfer untuk ditunjukkan saat pembayaran dikonfirmasi.
+                            </div>
+                        </div>
                         
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary-custom py-3 fw-bold fs-6">
@@ -456,6 +513,33 @@
             document.getElementById('cart-input').value = JSON.stringify(cart);
             return true;
         }
+
+        function togglePaymentInstructions() {
+            const payQris = document.getElementById('pay-qris').checked;
+            const instructions = document.getElementById('payment-instructions');
+            const qrisContainer = document.getElementById('qris-payment-container');
+            const text = document.getElementById('instruction-text');
+            const isTakeaway = <?= (isset($is_takeaway) && $is_takeaway) ? 'true' : 'false' ?>;
+            
+            if (payQris) {
+                if (qrisContainer) qrisContainer.classList.remove('d-none');
+                text.innerText = 'Silakan scan QRIS di atas untuk membayar, lalu kirim pesanan. Tunjukkan bukti transfer ke kasir.';
+                instructions.className = 'alert alert-primary border-0 rounded-3 mb-4 py-3 shadow-sm text-center';
+            } else {
+                if (qrisContainer) qrisContainer.classList.add('d-none');
+                if (isTakeaway) {
+                    text.innerText = 'Silakan lakukan pembayaran langsung di meja kasir untuk mengambil pesanan Anda.';
+                } else {
+                    text.innerText = 'Silakan lakukan pembayaran langsung di meja kasir setelah Anda selesai makan.';
+                }
+                instructions.className = 'alert alert-info border-0 rounded-3 mb-4 py-3 shadow-sm text-center';
+            }
+        }
+
+        // Call initially on DOM load
+        document.addEventListener('DOMContentLoaded', function() {
+            togglePaymentInstructions();
+        });
     </script>
 </body>
 </html>

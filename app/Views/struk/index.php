@@ -211,6 +211,10 @@
             <span>Rp <?= number_format($transaksi['total_harga'], 0, ',', '.') ?></span>
         </div>
         <div class="total-row">
+            <span>METODE:</span>
+            <span style="text-transform: uppercase;"><?= esc($transaksi['metode_pembayaran'] ?? 'cash') ?></span>
+        </div>
+        <div class="total-row">
             <span>BAYAR:</span>
             <span>Rp <?= number_format($transaksi['uang_bayar'], 0, ',', '.') ?></span>
         </div>

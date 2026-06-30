@@ -36,6 +36,64 @@
     </div>
 </div>
 
+<div class="row mb-4">
+    <div class="col-md-4 col-sm-6">
+        <div class="card card-custom border-primary h-100 text-center shadow-sm">
+            <div class="card-header-custom bg-primary text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="bi bi-bag-check-fill me-2"></i> QR Code Take Away</span>
+                <span class="badge bg-light text-primary rounded-pill" style="font-size: 0.75rem;">Bawa Pulang</span>
+            </div>
+            <div class="card-body card-body-custom d-flex flex-column align-items-center justify-content-center py-4">
+                <?php 
+                    $takeawayFile = 'QR_images/qr_takeaway.png';
+                    $takeawayExists = file_exists(ROOTPATH . 'public/' . $takeawayFile);
+                ?>
+                <?php if ($takeawayExists): ?>
+                    <div class="bg-white p-3 rounded shadow-sm border mb-3" style="max-width: 200px;">
+                        <img src="<?= base_url($takeawayFile) ?>?t=<?= time() ?>" alt="QR Take Away" class="img-fluid">
+                    </div>
+                    <div class="text-muted mb-3" style="font-size: 0.85rem; word-break: break-all;">
+                        <strong>Target URL:</strong><br>
+                        <span class="text-primary">
+                            <?php 
+                                if (!empty($ip)) {
+                                    $cleanIp = rtrim($ip, '/');
+                                    if (!str_starts_with($cleanIp, 'http://') && !str_starts_with($cleanIp, 'https://')) {
+                                        $cleanIp = 'http://' . $cleanIp;
+                                    }
+                                    echo esc($cleanIp . '/pesan/takeaway');
+                                } else {
+                                    echo site_url('pesan/takeaway');
+                                }
+                            ?>
+                        </span>
+                    </div>
+                    <div class="mt-auto w-100">
+                        <a href="<?= base_url($takeawayFile) ?>" download="QR_TakeAway.png" class="btn btn-outline-primary w-100 mb-2 btn-sm">
+                            <i class="bi bi-download me-2"></i> Unduh Gambar
+                        </a>
+                        <a href="<?= base_url('qrcode/generate-takeaway' . (!empty($ip) ? '?ip=' . urlencode($ip) : '')) ?>" class="btn btn-outline-secondary w-100 btn-sm">
+                            <i class="bi bi-arrow-clockwise me-2"></i> Generate Ulang
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="bg-light rounded d-flex flex-column align-items-center justify-content-center border mb-3" style="width: 180px; height: 180px;">
+                        <i class="bi bi-qr-code text-muted" style="font-size: 3rem;"></i>
+                        <span class="text-muted mt-2 fw-medium" style="font-size: 0.8rem;">QR Take Away Belum Dibuat</span>
+                    </div>
+                    <div class="mt-auto w-100">
+                        <a href="<?= base_url('qrcode/generate-takeaway' . (!empty($ip) ? '?ip=' . urlencode($ip) : '')) ?>" class="btn btn-primary-custom w-100 btn-sm">
+                            <i class="bi bi-gear-wide-connected me-2"></i> Generate QR Take Away
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-table me-2"></i> QR Code Berdasarkan Meja</h5>
+
 <div class="row">
     <?php if (empty($meja)): ?>
         <div class="col-12">
@@ -78,7 +136,7 @@
                                             if (!str_starts_with($cleanIp, 'http://') && !str_starts_with($cleanIp, 'https://')) {
                                                 $cleanIp = 'http://' . $cleanIp;
                                             }
-                                            echo esc($cleanIp . '/index.php/pesan/' . $nomorMeja);
+                                            echo esc($cleanIp . '/pesan/' . $nomorMeja);
                                         } else {
                                             echo site_url('pesan/' . $nomorMeja);
                                         }
@@ -86,8 +144,11 @@
                                 </span>
                             </div>
                             <div class="mt-auto w-100">
-                                <a href="<?= base_url($qrFile) ?>" download="QR_Meja_<?= esc($nomorMeja) ?>.png" class="btn btn-outline-primary btn-sm w-100">
+                                <a href="<?= base_url($qrFile) ?>" download="QR_Meja_<?= esc($nomorMeja) ?>.png" class="btn btn-outline-primary btn-sm w-100 mb-2">
                                     <i class="bi bi-download me-2"></i> Unduh Gambar
+                                </a>
+                                <a href="<?= base_url('qrcode/generate/' . esc($nomorMeja) . (!empty($ip) ? '?ip=' . urlencode($ip) : '')) ?>" class="btn btn-outline-secondary btn-sm w-100">
+                                    <i class="bi bi-arrow-clockwise me-2"></i> Generate Ulang
                                 </a>
                             </div>
                         <?php else: ?>
@@ -96,7 +157,7 @@
                                 <span class="text-muted mt-2 fw-medium" style="font-size: 0.8rem;">QR Belum Dibuat</span>
                             </div>
                             <div class="mt-auto w-100">
-                                <a href="<?= base_url('qrcode/generate' . (!empty($ip) ? '?ip=' . urlencode($ip) : '')) ?>" class="btn btn-primary-custom btn-sm w-100">
+                                <a href="<?= base_url('qrcode/generate/' . esc($nomorMeja) . (!empty($ip) ? '?ip=' . urlencode($ip) : '')) ?>" class="btn btn-primary-custom btn-sm w-100">
                                     <i class="bi bi-gear-wide-connected me-2"></i> Generate QR
                                 </a>
                             </div>
@@ -108,3 +169,4 @@
     <?php endif; ?>
 </div>
 <?= $this->endSection() ?>
+

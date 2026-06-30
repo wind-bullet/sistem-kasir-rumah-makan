@@ -3,8 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\MejaModel;
-use chillerlan\QRCode\QRCode as ChillerlanQRCode;
-use chillerlan\QRCode\QROptions;
 
 class QRCode extends BaseController
 {
@@ -31,54 +29,76 @@ class QRCode extends BaseController
 
     public function generate()
     {
+        helper('qr');
         $meja = $this->mejaModel->orderBy('nomor_meja', 'ASC')->findAll();
-        
-        // Define directory to save QR images
+        $customIp = $this->request->getGet('ip');
+
+        // Check/create directory
         $dirPath = ROOTPATH . 'public/QR_images/';
         if (!is_dir($dirPath)) {
-            mkdir($dirPath, 0777, true);
-        }
-
-        // Configure QR Code options
-        $options = new QROptions([
-            'version'      => 5,
-            'outputType'   => ChillerlanQRCode::OUTPUT_IMAGE_PNG,
-            'eccLevel'     => ChillerlanQRCode::ECC_L,
-            'scale'        => 10,
-            'imageBase64'  => false,
-        ]);
-        $qrcode = new ChillerlanQRCode($options);
-
-        // Get custom IP/host if provided
-        $customIp = $this->request->getGet('ip');
-        
-        foreach ($meja as $m) {
-            $nomorMeja = $m['nomor_meja'];
-            
-            // Build absolute URL
-            if (!empty($customIp)) {
-                // Ensure proper protocol and trailing slash
-                $cleanIp = rtrim($customIp, '/');
-                if (!str_starts_with($cleanIp, 'http://') && !str_starts_with($cleanIp, 'https://')) {
-                    $cleanIp = 'http://' . $cleanIp;
-                }
-                $url = $cleanIp . '/index.php/pesan/' . $nomorMeja;
-            } else {
-                $url = site_url('pesan/' . $nomorMeja);
-            }
-
-            $filePath = $dirPath . 'qr_meja_' . $nomorMeja . '.png';
-            
-            // Render and save QR code as file
-            try {
-                $qrcode->render($url, $filePath);
-            } catch (\Exception $e) {
-                session()->setFlashdata('error', 'Gagal generate QR Code: ' . $e->getMessage());
+            if (!mkdir($dirPath, 0777, true)) {
+                session()->setFlashdata('error', 'Gagal membuat direktori public/QR_images/. Periksa permission.');
                 return redirect()->to('/qrcode');
             }
         }
 
-        session()->setFlashdata('success', 'Semua QR Code berhasil di-generate.');
+        if (!is_writable($dirPath)) {
+            session()->setFlashdata('error', 'Direktori public/QR_images/ tidak dapat ditulis (not writable).');
+            return redirect()->to('/qrcode');
+        }
+
+        // Loop through all tables
+        foreach ($meja as $m) {
+            $nomorMeja = $m['nomor_meja'];
+            if (!generate_qr_meja($nomorMeja, $customIp)) {
+                session()->setFlashdata('error', "Gagal generate QR Code untuk Meja {$nomorMeja}.");
+                return redirect()->to('/qrcode' . (!empty($customIp) ? '?ip=' . urlencode($customIp) : ''));
+            }
+        }
+
+        // Also generate takeaway QR code
+        if (!generate_qr_takeaway($customIp)) {
+            session()->setFlashdata('error', 'Gagal generate QR Code untuk Takeaway.');
+            return redirect()->to('/qrcode' . (!empty($customIp) ? '?ip=' . urlencode($customIp) : ''));
+        }
+
+        session()->setFlashdata('success', 'Semua QR Code (termasuk Takeaway) berhasil di-generate.');
+        return redirect()->to('/qrcode' . (!empty($customIp) ? '?ip=' . urlencode($customIp) : ''));
+    }
+
+    public function generateSingle($nomorMeja)
+    {
+        helper('qr');
+        $customIp = $this->request->getGet('ip');
+
+        // Find if meja exists
+        $meja = $this->mejaModel->where('nomor_meja', $nomorMeja)->first();
+        if (!$meja) {
+            session()->setFlashdata('error', 'Meja tidak ditemukan.');
+            return redirect()->to('/qrcode');
+        }
+
+        if (generate_qr_meja($nomorMeja, $customIp)) {
+            session()->setFlashdata('success', "QR Code Meja {$nomorMeja} berhasil di-generate.");
+        } else {
+            session()->setFlashdata('error', "Gagal generate QR Code Meja {$nomorMeja}. Pastikan folder public/QR_images/ writable.");
+        }
+
+        return redirect()->to('/qrcode' . (!empty($customIp) ? '?ip=' . urlencode($customIp) : ''));
+    }
+
+    public function generateTakeaway()
+    {
+        helper('qr');
+        $customIp = $this->request->getGet('ip');
+
+        if (generate_qr_takeaway($customIp)) {
+            session()->setFlashdata('success', 'QR Code Takeaway berhasil di-generate.');
+        } else {
+            session()->setFlashdata('error', 'Gagal generate QR Code Takeaway. Pastikan folder public/QR_images/ writable.');
+        }
+
         return redirect()->to('/qrcode' . (!empty($customIp) ? '?ip=' . urlencode($customIp) : ''));
     }
 }
+

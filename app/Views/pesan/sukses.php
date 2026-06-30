@@ -81,8 +81,12 @@
                     <span class="fw-bold text-dark">#TX-<?= sprintf('%05d', $order['id_transaksi']) ?></span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-secondary">Nomor Meja</span>
-                    <span class="fw-bold text-dark">Meja <?= esc($order['nomor_meja']) ?></span>
+                    <span class="text-secondary">Tipe Pesanan / Meja</span>
+                    <span class="fw-bold text-dark"><?= ($order['nomor_meja'] === 'Take Away' || empty($order['nomor_meja'])) ? 'Take Away (Bawa Pulang)' : 'Dine In - Meja ' . esc($order['nomor_meja']) ?></span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-secondary">Metode Pembayaran</span>
+                    <span class="badge <?= (isset($order['metode_pembayaran']) && $order['metode_pembayaran'] === 'qris') ? 'bg-primary' : 'bg-secondary' ?> fw-bold text-uppercase"><?= esc($order['metode_pembayaran'] ?? 'cash') ?></span>
                 </div>
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-secondary">Waktu</span>
@@ -107,11 +111,25 @@
             </div>
 
             <div class="d-grid gap-2">
-                <a href="<?= base_url('pesan/' . $order['nomor_meja']) ?>" class="btn btn-primary-custom">
-                    <i class="bi bi-plus-lg me-2"></i> Pesan Menu Tambahan
-                </a>
+                <?php if ($order['nomor_meja'] === 'Take Away' || empty($order['nomor_meja'])): ?>
+                    <a href="<?= base_url('pesan/takeaway') ?>" class="btn btn-primary-custom">
+                        <i class="bi bi-plus-lg me-2"></i> Pesan Menu Tambahan
+                    </a>
+                <?php else: ?>
+                    <a href="<?= base_url('pesan/' . $order['nomor_meja']) ?>" class="btn btn-primary-custom">
+                        <i class="bi bi-plus-lg me-2"></i> Pesan Menu Tambahan
+                    </a>
+                <?php endif; ?>
                 <div class="text-muted mt-3" style="font-size: 0.85rem;">
-                    Silakan bayar di kasir setelah Anda selesai bersantap. Terima kasih!
+                    <?php if (isset($order['metode_pembayaran']) && $order['metode_pembayaran'] === 'qris'): ?>
+                        Silakan tunjukkan bukti pembayaran QRIS Anda ke kasir saat mengambil pesanan. Terima kasih!
+                    <?php else: ?>
+                        <?php if ($order['nomor_meja'] === 'Take Away' || empty($order['nomor_meja'])): ?>
+                            Silakan lakukan pembayaran langsung di meja kasir untuk mengambil pesanan Anda. Terima kasih!
+                        <?php else: ?>
+                            Silakan bayar di kasir setelah Anda selesai bersantap. Terima kasih!
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
