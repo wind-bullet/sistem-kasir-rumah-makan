@@ -171,7 +171,7 @@
         </div>
         <div class="meta-row">
             <span>Kasir:</span>
-            <span><?= esc($transaksi['nama_kasir']) ?></span>
+            <span><?= esc($transaksi['nama_kasir'] ?? 'Pelanggan') ?></span>
         </div>
         <div class="meta-row">
             <span>Meja:</span>

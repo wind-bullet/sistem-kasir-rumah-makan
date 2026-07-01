@@ -167,7 +167,7 @@
                         <td class="text-center"><?= $no++ ?></td>
                         <td class="fw-bold">#TRX-<?= sprintf('%05d', $tx['id_transaksi']) ?></td>
                         <td><?= date('d-m-Y H:i', strtotime($tx['tanggal'])) ?></td>
-                        <td><?= esc($tx['nama_kasir']) ?></td>
+                        <td><?= esc($tx['nama_kasir'] ?? 'Pelanggan') ?></td>
                         <td class="text-center">
                             <?= $tx['id_meja'] ? 'Meja ' . $tx['nomor_meja'] : 'Take Away' ?>
                         </td>

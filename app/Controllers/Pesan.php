@@ -90,9 +90,7 @@ class Pesan extends BaseController
             return redirect()->to('/pesan/' . $nomorMeja);
         }
 
-        // Fetch the first user to associate with the transaction (required by database schema)
-        $firstUser = $this->userModel->orderBy('id_user', 'ASC')->first();
-        $idUser = $firstUser ? $firstUser['id_user'] : 1;
+
 
         $totalHarga = 0;
         $itemsToSave = [];
@@ -134,7 +132,7 @@ class Pesan extends BaseController
 
         // 1. Insert into transaksi
         $this->transaksiModel->insert([
-            'id_user'           => $idUser,
+            'id_user'           => null,
             'id_meja'           => $idMeja,
             'total_harga'       => $totalHarga,
             'uang_bayar'        => $totalHarga, // Customer ordering: set cash paid equal to total
@@ -186,9 +184,7 @@ class Pesan extends BaseController
             return redirect()->to('/pesan/takeaway');
         }
 
-        // Fetch the first user to associate with the transaction
-        $firstUser = $this->userModel->orderBy('id_user', 'ASC')->first();
-        $idUser = $firstUser ? $firstUser['id_user'] : 1;
+
 
         $totalHarga = 0;
         $itemsToSave = [];
@@ -230,7 +226,7 @@ class Pesan extends BaseController
 
         // 1. Insert into transaksi
         $this->transaksiModel->insert([
-            'id_user'           => $idUser,
+            'id_user'           => null,
             'id_meja'           => null, // Set to null for takeaway
             'total_harga'       => $totalHarga,
             'uang_bayar'        => $totalHarga,

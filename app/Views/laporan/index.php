@@ -119,7 +119,7 @@
                                         <tr>
                                             <td class="fw-bold">#TRX-<?= sprintf('%05d', $tx['id_transaksi']) ?></td>
                                             <td><?= date('d-m-Y H:i', strtotime($tx['tanggal'])) ?></td>
-                                            <td><?= esc($tx['nama_kasir']) ?></td>
+                                            <td><?= esc($tx['nama_kasir'] ?? 'Pelanggan') ?></td>
                                             <td>
                                                 <?= $tx['id_meja'] ? 'Meja ' . $tx['nomor_meja'] : '<span class="text-muted">Take Away</span>' ?>
                                             </td>

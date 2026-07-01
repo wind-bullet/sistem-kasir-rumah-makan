@@ -390,39 +390,7 @@
             let totalQty = 0;
             let totalPrice = 0;
 
-            // Update individual item action sections in Grid
-            document.querySelectorAll('.menu-item-col').forEach(col => {
-                // reset to default Add button if not in cart
-                const id = parseInt(col.querySelector('.menu-card').parentNode.querySelector('[data-category]').parentNode.querySelector('button') ? 
-                            col.querySelector('.menu-card').parentNode.querySelector('button').getAttribute('onclick').match(/\d+/)[0] : 0);
-            });
-
-            // Update action UI dynamically
-            cart.forEach(item => {
-                const actionDiv = document.getElementById('actions-' + item.id_menu);
-                if (actionDiv) {
-                    actionDiv.innerHTML = `
-                        <div class="quantity-control">
-                            <button class="quantity-btn" onclick="changeQty(${item.id_menu}, -1)">-</button>
-                            <span class="quantity-val">${item.qty}</span>
-                            <button class="quantity-btn" onclick="changeQty(${item.id_menu}, 1)">+</button>
-                        </div>
-                    `;
-                }
-            });
-
-            // Clean action buttons for items removed from cart
-            document.querySelectorAll('[id^="actions-"]').forEach(div => {
-                const id = parseInt(div.id.split('-')[1]);
-                const inCart = cart.find(item => item.id_menu === id);
-                if (!inCart) {
-                    const btn = div.parentNode.parentNode.querySelector('h5'); // finding some reference or hardcode
-                    // Since it's easier, let's keep track of actual names/prices to regenerate standard add button
-                }
-            });
-
-            // Let's rewrite the render action buttons helper properly:
-            // (We will dynamically keep UI elements clean by running loop on all cards)
+            // Render all action buttons properly based on cart state
             renderAllActionButtons();
 
             cart.forEach(item => {

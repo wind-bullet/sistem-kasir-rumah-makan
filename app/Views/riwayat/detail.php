@@ -24,7 +24,7 @@
                     </tr>
                     <tr>
                         <td class="text-secondary">Kasir yang Melayani</td>
-                        <td>: <?= esc($transaksi['nama_kasir']) ?></td>
+                        <td>: <?= esc($transaksi['nama_kasir'] ?? 'Pelanggan') ?></td>
                     </tr>
                     <tr>
                         <td class="text-secondary">Meja</td>

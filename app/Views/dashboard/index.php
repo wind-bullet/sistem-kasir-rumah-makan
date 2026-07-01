@@ -88,7 +88,7 @@
                                     <tr>
                                         <td class="fw-bold">#TRX-<?= sprintf('%05d', $tx['id_transaksi']) ?></td>
                                         <td><?= date('d-m-Y H:i', strtotime($tx['tanggal'])) ?></td>
-                                        <td><?= $tx['nama_kasir'] ?></td>
+                                        <td><?= esc($tx['nama_kasir'] ?? 'Pelanggan') ?></td>
                                         <td>
                                             <?php if ($tx['id_meja']): ?>
                                                 <span class="badge bg-secondary">Meja <?= $tx['nomor_meja'] ?></span>

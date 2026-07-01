@@ -25,7 +25,7 @@ class Dashboard extends BaseController
 
         // Fetch last 5 transactions
         $data['recent_transaksi'] = $transaksiModel->select('transaksi.*, users.nama as nama_kasir, meja.nomor_meja')
-                                                    ->join('users', 'users.id_user = transaksi.id_user')
+                                                    ->join('users', 'users.id_user = transaksi.id_user', 'left')
                                                     ->join('meja', 'meja.id_meja = transaksi.id_meja', 'left')
                                                     ->orderBy('transaksi.id_transaksi', 'DESC')
                                                     ->limit(5)

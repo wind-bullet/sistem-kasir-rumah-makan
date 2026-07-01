@@ -19,7 +19,7 @@ class CreateTransaksiTable extends Migration
                 'type'       => 'INT',
                 'constraint' => 11,
                 'unsigned'   => true,
-                'null'       => false,
+                'null'       => true,
             ],
             'id_meja' => [
                 'type'       => 'INT',

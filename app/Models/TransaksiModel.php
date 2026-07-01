@@ -24,7 +24,7 @@ class TransaksiModel extends Model
     {
         $today = date('Y-m-d');
         return $this->select('transaksi.*, users.nama as nama_kasir, meja.nomor_meja')
-                    ->join('users', 'users.id_user = transaksi.id_user')
+                    ->join('users', 'users.id_user = transaksi.id_user', 'left')
                     ->join('meja', 'meja.id_meja = transaksi.id_meja', 'left')
                     ->where('DATE(transaksi.tanggal)', $today)
                     ->orderBy('transaksi.id_transaksi', 'DESC')
@@ -43,7 +43,7 @@ class TransaksiModel extends Model
     public function getTransaksiByPeriode($dari, $sampai)
     {
         return $this->select('transaksi.*, users.nama as nama_kasir, meja.nomor_meja')
-                    ->join('users', 'users.id_user = transaksi.id_user')
+                    ->join('users', 'users.id_user = transaksi.id_user', 'left')
                     ->join('meja', 'meja.id_meja = transaksi.id_meja', 'left')
                     ->where('DATE(transaksi.tanggal) >=', $dari)
                     ->where('DATE(transaksi.tanggal) <=', $sampai)
@@ -54,7 +54,7 @@ class TransaksiModel extends Model
     public function getTransaksiWithDetail($id)
     {
         $transaksi = $this->select('transaksi.*, users.nama as nama_kasir, meja.nomor_meja')
-                          ->join('users', 'users.id_user = transaksi.id_user')
+                          ->join('users', 'users.id_user = transaksi.id_user', 'left')
                           ->join('meja', 'meja.id_meja = transaksi.id_meja', 'left')
                           ->where(['transaksi.id_transaksi' => $id])
                           ->first();
